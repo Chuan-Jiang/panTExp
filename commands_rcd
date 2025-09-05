@@ -1,0 +1,28 @@
+for i in `seq -w 1 10`; do echo $i; sbatch -p nocona -n 1 -N 1 -c 30 --wrap  "vg giraffe -Z ~/chuan_scra_dw/TEv2/01_Data/hprc-v1.1-mc-grch38.gbz -z  ~/chuan_scra_dw/TEv2/01_Data/hprc-v1.1-mc-grch38.dist.zipcode  -d ~/chuan_scra_dw/TEv2/01_Data/hprc-v1.1-mc-grch38.dist -m ~/chuan_scra_dw/TEv2/01_Data/hprc-v1.1-mc-grch38.dist.min -p -t 30 -M 10 -f 04_simulation/simulated_reads/sample_${i}_1.fasta -f  04_simulation/simulated_reads/sample_${i}_2.fasta -o gaf -M 100  | gzip -  > 05_aln/sample_$i.gaf.gz "; done
+
+for i in `seq -w 1 10`; do echo $i; sbatch -p nocona -n 1 -N 1 -c 30 --wrap  "vg giraffe -Z ~/chuan_scra_dw/TEv2/01_Data/hprc-v1.1-mc-grch38.gbz -z  ~/chuan_scra_dw/TEv2/01_Data/hprc-v1.1-mc-grch38.dist.zipcode  -d ~/chuan_scra_dw/TEv2/01_Data/hprc-v1.1-mc-grch38.dist -m ~/chuan_scra_dw/TEv2/01_Data/hprc-v1.1-mc-grch38.dist.min -p -t 30 -M 100 --paired-distance-limit 3 -f 04_simulation/simulated_reads/sample_${i}_1.fasta -f  04_simulation/simulated_reads/sample_${i}_2.fasta -o gaf -M 100  | gzip -  > 05_aln/sample_$i.M100.gaf.gz "; done
+
+
+
+for i in 05_aln/*bed.gz ; do zcat $i  | sort -k2,2n -k4,4  | bgzip >  $i.sorted.gz; done # 2025/03/25   17:50:30@login-20-26.hpcc.ttu.edu	COM: 
+
+
+for i in `seq -w 1 10`; do sbatch -p nocona -n 1 -N 1 -c 31 --wrap " bowtie2 -x ~/chuan_lustre/Database/GRCh38_noalt_as/GRCh38_noalt_as -f  -1 04_simulation/simulated_reads/sample_${i}_1.fasta -2 04_simulation/simulated_reads/sample_${i}_2.fasta  -k 100 --very-sensitive-local --score-min L,0,1.6  --rg-id $i  -S  02_aln/$i.sam -p 30" ; done
+
+for i in 05_aln/*gaf.gz; do zcat $i  |perl Codes_exp/keep.mapped.gaf.pl  |vg gamsort -G - |bgzip   > $i.bgz; done # 2025/03/28   12:07:30@login-20-25	COM: 
+
+for i in  `seq -w 1 10`; do zcat 05_aln/sample_$i.gaf.gz | perl Codes_exp/keep.mapped.gaf.pl | vg gamsort -G - | bgzip > 05_aln/sample_$i.sorted.gaf.gz; done
+for i in  `seq -w 1 10`; do zcat 05_aln/sample_$i.d3.gaf.gz | perl Codes_exp/keep.mapped.gaf.pl | vg gamsort -G - | bgzip > 05_aln/sample_$i.sorted.d3.gaf.gz; done
+for i in  `seq -w 1 10`; do zcat 05_aln/sample_$i.d5.gaf.gz | perl Codes_exp/keep.mapped.gaf.pl | vg gamsort -G - | bgzip > 05_aln/sample_$i.sorted.d5.gaf.gz; done
+
+
+for i in 05_aln/sample_*sorted*gaf.gz; do echo $i; tabix -p gaf $i ; done # 2025/04/09   10:06:43@login-20-25	COM: 
+
+
+sbatch  --array 1-10 Codes_exp/submit_vg1.63.1.sbatch # 2025/04/21   19:35:17@login-20-26.hpcc.ttu.edu	COM: 
+
+for i in  `seq -w 1 10`; do zcat 05_aln/sample_$i.ext.gaf.gz | perl Codes_exp/keep.mapped.gaf.pl | vg gamsort -G - | bgzip > 05_aln/sample_$i.ext.sorted.gaf.gz; done # 2025/04/21   19:43:04@login-20-26.hpcc.ttu.edu	COM: 
+
+
+for  i in `seq -w 1 10`; do echo "zcat 05_aln/sample_$i.ext.gaf.gz | perl Codes_exp/extract.reads.parallel.pl -p 05_aln/sample_$i.ext -n 5 -b -l ~/chuan_dw/Database/Pangenome/nodelen.grch38.bed.gz";done # 2025/05/04   22:03:58@login-20-25	COM: 
+

@@ -5,7 +5,7 @@ use warnings; use strict;
 while(<STDIN>){
 	chomp;
 	my @ar = split /\t/;
-	my $gene = pop @ar;
+	my $gene = $ar[-2];
 
 	my @gar = split /\|/, $gene;
 	my ($gs,$ge) = ($gar[2] - 1, $gar[2]);

@@ -5,6 +5,8 @@ use Bit::Vector;
 use List::Util qw(min max);
 use Getopt::Long;
 
+my $debug = 0;
+
 my %opt;
 GetOptions(
     "overlap|o=s"     => \$opt{overlap},
@@ -64,10 +66,12 @@ while (<STDIN>) {
     my $anno = $fields[-2];
 	my $apath = $fields[-1];
 
+	print "\nTT> $lout\n" if $debug;
+
     if ($anno eq "." ) {
         print $fh_non  "$lout\tM\t.\n" if $noverlap_file ;
 		undef %gvec;
-		#print "MISS $lout\n";
+		print "\tMISS\n" if $debug ;
     } else {
 
 		unless ( exists $gvec{$anno}){
@@ -92,18 +96,20 @@ while (<STDIN>) {
 					if ($rc[1] >= $gc[0] and $gc[1] >= $rc[0] ){
 						$overlap = min( $gc[1], $rc[1] ) - max( $gc[0], $rc[0] ) + 1;
 					}
-					#print "$anno : $rid :  $rd $dd $overlap\n";
+					print "\t--->Hit:$anno : rid $rid ; rd $rd ; STR $dd ; OVER $overlap from @gc @rc\n" if $debug ;
 					$score += $overlap;
 				}
 			}
 		}
 
+		print "\toverlap $score $apath $anno \n"  if $debug ;
+
 		#print "total score $score\n";
 		if($score <  $overlen ){
-			print $fh_non  "$lout\tA\t$anno\n" if $noverlap_file ;
+			print $fh_non  "$lout\tA\t$anno\t$overlen\n" if $noverlap_file ;
 			# direction mismatch, discard this annoation
 		}else{
-			print $fh_overlap "$lout\tO\t$anno\n" ;
+			print $fh_overlap "$lout\tO\t$anno\t$overlen\n" ;
 		}
 	}
 }

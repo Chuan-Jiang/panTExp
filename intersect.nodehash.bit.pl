@@ -189,8 +189,8 @@ while( <$in_fh> ){
 
 	my @ar = split /\t/, $line;
 
-	my @genes  = split /,/, $ar[-1] ;
-	next unless ($samples_fhs{$ar[-7]});
+	my @genes  = split /,/, $ar[-2] ;
+	next unless ($samples_fhs{$ar[-8]});
 
 	if ( !grep { exists $lines{$_} } @genes ) {
 		print "No elements\n" if $debug ;
@@ -205,8 +205,8 @@ while( <$in_fh> ){
 	foreach my $g (@genes){
 		push @{$lines{$g}{L}}, $line;	
 		#### determing if it is a read with branch/skip.
-		if($ar[-4] ne "."){
-			my @brs = split /;/, $ar[-4];
+		if($ar[-5] ne "."){
+			my @brs = split /;/, $ar[-5];
 			foreach my $b (@brs) {
 				my($loc1,$loc2) = split /,/, $b;
 				push @{ $lines{$g}{B} }, [$loc1,$loc2];

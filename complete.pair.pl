@@ -252,7 +252,7 @@ print "$deleted_count files deleted\n";
 warn "summarize disc file\n";
 system("cat @discs > $disc_file");
 
-print STAT "Total: LowQuality:$stat{D}\nOverlapRescue:$stat{O}\nWanderRescue:$stat{W}\nGap:$stat{G}\nReferRescue:$stat{R}\n";
+print STAT "Total:\nLowQuality:$stat{D}\nOverlapRescue:$stat{O}\nWanderRescue:$stat{W}\nGap:$stat{G}\nReferRescue:$stat{R}\n";
 
 
 warn "all done. output files: $keep_file , $disc_file , $stat_file \n";
@@ -313,8 +313,6 @@ sub process_lines {
 		my $mul_c = pop @ar;
 		my $rd = $ar[3];
 		
-		print "recording $rd mult_c $mul_c\n" if $debug;
-		print "wrong $line_w\n" unless $mul_c =~ /^\d+$/;
 		$rdrm{$rd}{R} = $mul_c ;
 		
 		##############################################################
@@ -340,7 +338,7 @@ sub process_lines {
 			}
 			print "over $lap\n" if $debug;
 			unless ( $lap ){
-				if(%collect){
+				if( keys %collect ){
 					link_it (\%complete, \%collect, \%graph, \%nodesb, $tabix, $tabix_l,$tabix_g, $fhk, $fhd,\%stat_c  ,\ %rdrm);
 				}else{
 					print "no collected reads, skip link_it\n" if $debug;;
@@ -473,7 +471,7 @@ sub process_lines {
 		unless($disc) {
 			## prepare	
 			my $read_num = $tc  + $i;  
-			
+			print "\t=$rd $read_num collected\n" if $debug;	
 			map { $nodesb{$_} = 1 } keys %{$uniq_nodes{1}};
 			map { $nodesb{$_} = 1 } keys %{$uniq_nodes{2}};
 
@@ -486,7 +484,6 @@ sub process_lines {
 			my @nodes1 = @{ build($ar[6],\%graph) };
 			my @nodes2 = @{ build($ar[7],\%graph) }; # it return an array of node annotation sub-array
 			
-
 			####
 			my $read = "$rd:$read_num";
 			my $score = $inf1[1] + $inf2[1];
@@ -516,8 +513,9 @@ sub process_lines {
 		$last_p = $ar[2];
 	}
 	######
-	link_it (\%complete, \%collect, \%graph, \%nodesb, $tabix, $tabix_l,$tabix_g, $fhk, $fhd,\%stat_c  ,\ %rdrm);
-
+	if(%collect){
+		link_it (\%complete, \%collect, \%graph, \%nodesb, $tabix, $tabix_l,$tabix_g, $fhk, $fhd,\%stat_c  ,\ %rdrm);
+	}
 	foreach my $r (keys %rdrm ){
 		my $rt = $rdrm{$r}{R};
 		my $rd = $rdrm{$r}{D} // 0;
@@ -561,7 +559,14 @@ sub link_it {
 	
 	## STEP1: collect associated position in linear references default is GRCh38
 	my %g2l;
-	my %nranges = nodes_ranges(keys %$nodesb);
+	my @nodes_rs = keys %$nodesb;
+	#unless (@nodes_rs){
+		#my @emptys_r =  keys %$collect; 
+		#print "\t\tempty nodes in this link sets\n@emptys_r????\n";
+		#die;
+	#}
+	my %nranges = nodes_ranges( @nodes_rs );
+	
 	foreach my $r ( sort keys %nranges ){
 		my $iter = $tabix_g -> query($r);
 
@@ -628,6 +633,7 @@ sub link_it {
 			$$rdrm{$r}{D} ++ ;
 		}
 	}
+    print "Link Module finished\n############\n\n" if $debug;
 
 }
 
@@ -1108,7 +1114,6 @@ sub wander_rescue {
             }
         }
     }
-    print "Link Module finished\n############\n" if $debug;
 }
 
 sub dest_checkin {
@@ -1166,7 +1171,10 @@ sub nodes_ranges {
     @nums = sort { $a <=> $b } @nums; 
     my %ranges;
     my %includs;
-    $includs{$nums[0]} = 1;
+    if(! defined $nums[0] ){
+		return ;
+	}
+	$includs{$nums[0]} = 1;
 
     my $start = $nums[0];
     my $end   = $nums[0];

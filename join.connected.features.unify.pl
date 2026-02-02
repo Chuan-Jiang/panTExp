@@ -117,7 +117,8 @@ foreach my $sam ( keys %assign_fs ){
 			}
 		}
 	}
-	print "sam $sam processed\n";
+	my $joins = keys %gene_connections;
+	print "sam $sam processed joins $joins\n";
 }
 
 #==============

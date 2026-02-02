@@ -15,6 +15,7 @@ open OUT, ">$pre.join.assign" or die $! ;
 open OTH, ">$pre.others" or die $!;
 
 
+#### reading fearure link file
 my %links;
 open LINK, $lfile or die $!;
 while(<LINK>){
@@ -30,9 +31,9 @@ while(<LINK>){
 close LINK;
 
 
+### reading raw assign file 
 my %remains;
 my %seens;
-
 open IN, $rfile or die $!;
 while(<IN>){
 	chomp;
@@ -55,7 +56,7 @@ while(<IN>){
 	
 	my @muls = split /-/, $ar[-4];
 	
-	if($muls[0] < 2){
+	if($muls[0] < 2 ){
 		next;
 	}else{
 		#print "@muls\n";
@@ -91,8 +92,26 @@ while(<KIN>){
 	
 	$mul = eval( $mul );
 	if(exists $remains{$read}){
-		if(! $remains{$read} -> bit_test($mul) ){
+		my $ok = eval {
+			$remains{$read}->bit_test($mul);
 			print OTH "$_\n";
+			1;
+		};
+
+		if (!$ok) {
+			my $err = $@ || "Unknown error";
+
+			my $size = eval { $remains{$read}->Size() } // "NA";
+
+			warn "ERROR caught:\n",
+				 "  read = $read\n",
+				 "  mul  = $mul\n",
+				 "  vector size = $size\n",
+				 "  message = $err\n";
+
+			# optional: exit immediately
+			die "Stopping due to bit_test error\n";
 		}
+
 	}
-mecfs_pan/02_complete/CF1.complete.keep.tsvmecfs_pan/02_complete/CF1.complete.keep.tsv}
+}
